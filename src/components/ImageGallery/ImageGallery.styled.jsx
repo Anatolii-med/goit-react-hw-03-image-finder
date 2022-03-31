@@ -1,7 +1,10 @@
+import styled from '@emotion/styled';
+
 /*
  * Стили компонента ImageGallery
  */
-.ImageGallery {
+
+export const ImageGalleryUl = styled.ul`
     display: grid;
     max-width: calc(100vw - 48px);
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -12,4 +15,4 @@
     list-style: none;
     margin-left: auto;
     margin-right: auto;
-}
+`;

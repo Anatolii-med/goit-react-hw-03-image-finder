@@ -1,11 +1,17 @@
 import React from 'react';
+import {
+    ImageGalleryItem,
+    ImageGalleryItemImage,
+} from './imageGalleryItem.styled';
+
 export default class Item extends React.Component {
     render() {
-        const { sours, altern, id } = this.props;
+        const { largeImageURL, sours, altern, id, onClick } = this.props;
+
         return (
-            <li key={id}>
-                <img src={sours} alt={altern} />
-            </li>
+            <ImageGalleryItem key={id} onClick={() => onClick(largeImageURL)}>
+                <ImageGalleryItemImage src={sours} alt={altern} />
+            </ImageGalleryItem>
         );
     }
 }
