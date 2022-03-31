@@ -6,6 +6,7 @@ import {
     SearchFormButtonLabel,
     SearchFormInput,
 } from './searchbar.styled';
+import Notiflix from 'notiflix';
 
 class SearchBar extends React.Component {
     state = {
@@ -19,7 +20,11 @@ class SearchBar extends React.Component {
 
     onSubmitSearch = e => {
         e.preventDefault();
-        if (this.state.imageData.trim() === '') return;
+        if (this.state.imageData.trim() === '') {
+            return Notiflix.Notify.warning(
+                'Введите в строку поиска какое изображение хотите найти'
+            );
+        }
 
         this.props.onSubmit(this.state.imageData);
         this.setState({ imageData: '' });

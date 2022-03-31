@@ -123,6 +123,7 @@ class App extends React.Component {
                 </>
             );
         }
+
         if (this.state.status === 'modal') {
             return (
                 <>

@@ -27,3 +27,9 @@ export const ButtonStyle = styled.button`
         background-color: #303f9f;
     }
 `;
+
+export const BtnWrap = styled.div`
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+`;
