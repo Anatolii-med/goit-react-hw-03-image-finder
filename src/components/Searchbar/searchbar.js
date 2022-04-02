@@ -6,12 +6,13 @@ import {
     SearchFormButtonLabel,
     SearchFormInput,
 } from './searchbar.styled';
-import Notiflix from 'notiflix';
 
 class SearchBar extends React.Component {
     state = {
         imageData: '',
     };
+
+    componentDidUpdate(prevProps, prevState) {}
 
     onHandleInput = e => {
         const { value } = e.target;
@@ -20,14 +21,16 @@ class SearchBar extends React.Component {
 
     onSubmitSearch = e => {
         e.preventDefault();
+
         if (this.state.imageData.trim() === '') {
-            return Notiflix.Notify.warning(
+            return this.props.onError(
+                'warning',
                 'Введите в строку поиска какое изображение хотите найти'
             );
         }
 
         this.props.onSubmit(this.state.imageData);
-        this.setState({ imageData: '' });
+        this.setState({ imageData: '', pagination: 1 });
     };
 
     render() {

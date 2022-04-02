@@ -17,6 +17,58 @@ class App extends React.Component {
         modalImgURL: '',
     };
 
+    componentDidUpdate(prevProps, prevState) {
+        const { searchImg, pagination } = this.state;
+        const searchImgPrev = prevState.searchImg;
+        const paginationPrev = prevState.pagination;
+        const imagesArrayPrev = prevState.imagesArray;
+
+        const firstFetch = searchImgPrev !== searchImg && pagination === 1;
+
+        if (firstFetch) {
+            const { searchImg, pagination } = this.state;
+            fetchFunc(searchImg, pagination)
+                .then(data => {
+                    if (data.total === 0) {
+                        this.onMessage(
+                            'failure',
+                            `Мы не смогли найти ваш запрос "${searchImg}"`
+                        );
+                        return this.setState({ status: 'rejected' });
+                    }
+
+                    this.setState({
+                        imagesArray: data.hits,
+                        status: 'resolved',
+                    });
+
+                    this.onMessage(
+                        'success',
+                        `По запросу "${searchImg}" мы нашли ${data.totalHits} изображений`
+                    );
+                })
+                .catch(error => this.setState({ error, status: 'rejected' }));
+        }
+
+        const secondaryFetch =
+            paginationPrev !== pagination && pagination !== 1;
+
+        if (secondaryFetch) {
+            fetchFunc(searchImg, pagination)
+                .then(data =>
+                    this.setState(() => ({
+                        imagesArray: [...imagesArrayPrev, ...data.hits],
+                        status: 'resolved',
+                    }))
+                )
+                .catch(error => this.setState({ error, status: 'rejected' }));
+        }
+    }
+
+    onMessage = (type, message) => {
+        Notiflix.Notify[type](message);
+    };
+
     resetPagination = () => {
         this.setState({ pagination: 1 });
     };
@@ -43,52 +95,6 @@ class App extends React.Component {
         this.setState({ modalImgURL: '', status: 'resolved' });
     };
 
-    componentDidUpdate(prevProps, prevState) {
-        const { searchImg, pagination } = this.state;
-        const searchImgPrev = prevState.searchImg;
-        const paginationPrev = prevState.pagination;
-        const imagesArrayPrev = prevState.imagesArray;
-
-        const firstFetch = searchImgPrev !== searchImg && pagination === 1;
-
-        if (firstFetch) {
-            const { searchImg, pagination } = this.state;
-            fetchFunc(searchImg, pagination)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.total === 0) {
-                        Notiflix.Notify.failure(
-                            `Мы не смогли найти ваш запрос "${searchImg}"`
-                        );
-                        return this.setState({ status: 'rejected' });
-                    }
-                    Notiflix.Notify.success(
-                        `По запросу "${searchImg}" мы нашли ${data.totalHits} изображений`
-                    );
-                    this.setState({
-                        imagesArray: data.hits,
-                        status: 'resolved',
-                    });
-                })
-                .catch(error => this.setState({ error, status: 'rejected' }));
-        }
-
-        const secondaryFetch =
-            paginationPrev !== pagination && pagination !== 1;
-
-        if (secondaryFetch) {
-            fetchFunc(searchImg, pagination)
-                .then(res => res.json())
-                .then(data =>
-                    this.setState(() => ({
-                        imagesArray: [...imagesArrayPrev, ...data.hits],
-                        status: 'resolved',
-                    }))
-                )
-                .catch(error => this.setState({ error, status: 'rejected' }));
-        }
-    }
-
     submitData = data => {
         this.setState({ imagesArray: data });
     };
@@ -97,7 +103,10 @@ class App extends React.Component {
         if (this.state.status === 'idle') {
             return (
                 <>
-                    <SearchBar onSubmit={this.onSearchSubmit} />
+                    <SearchBar
+                        onSubmit={this.onSearchSubmit}
+                        onError={this.onMessage}
+                    />
                 </>
             );
         }
@@ -105,7 +114,10 @@ class App extends React.Component {
         if (this.state.status === 'pending') {
             return (
                 <>
-                    <SearchBar onSubmit={this.onSearchSubmit} />
+                    <SearchBar
+                        onSubmit={this.onSearchSubmit}
+                        onError={this.onMessage}
+                    />
                     <Spinner />
                 </>
             );
@@ -114,7 +126,10 @@ class App extends React.Component {
         if (this.state.status === 'resolved') {
             return (
                 <>
-                    <SearchBar onSubmit={this.onSearchSubmit} />
+                    <SearchBar
+                        onSubmit={this.onSearchSubmit}
+                        onError={this.onMessage}
+                    />
                     <Gallery
                         images={this.state.imagesArray}
                         onItemClick={this.onModalOpen}
@@ -127,7 +142,10 @@ class App extends React.Component {
         if (this.state.status === 'modal') {
             return (
                 <>
-                    <SearchBar onSubmit={this.onSearchSubmit} />
+                    <SearchBar
+                        onSubmit={this.onSearchSubmit}
+                        onError={this.onMessage}
+                    />
                     <Gallery images={this.state.imagesArray} />
                     <Modal
                         largeImageUrl={this.state.modalImgURL}
@@ -138,9 +156,10 @@ class App extends React.Component {
         }
         if (this.state.status === 'rejected') {
             return (
-                <>
-                    <SearchBar onSubmit={this.onSearchSubmit} />
-                </>
+                <SearchBar
+                    onSubmit={this.onSearchSubmit}
+                    onError={this.onMessage}
+                />
             );
         }
     }
