@@ -1,6 +1,6 @@
 import React from 'react';
 import Gallery from './ImageGallery/ImageGallery';
-import fetchFunc from './Searchbar/fetchImage';
+import fetchFunc from '../services/fetchImage';
 import SearchBar from './Searchbar/searchbar';
 import Button from './Button/button';
 import Spinner from './Loader/loader';
@@ -10,58 +10,44 @@ import Notiflix from 'notiflix';
 class App extends React.Component {
     state = {
         status: 'idle',
-        searchImg: [],
+        searchImg: null,
         pagination: 1,
-        imagesArray: null,
+        imagesArray: [],
         error: '',
         modalImgURL: '',
     };
 
-    componentDidUpdate(prevProps, prevState) {
+    async componentDidUpdate(prevProps, prevState) {
         const { searchImg, pagination } = this.state;
         const searchImgPrev = prevState.searchImg;
         const paginationPrev = prevState.pagination;
-        const imagesArrayPrev = prevState.imagesArray;
 
-        const firstFetch = searchImgPrev !== searchImg && pagination === 1;
+        if (searchImgPrev !== searchImg || paginationPrev !== pagination) {
+            try {
+                const data = await fetchFunc(searchImg, pagination);
+                if (data.total === 0) {
+                    this.onMessage(
+                        'failure',
+                        `Мы не смогли найти ваш запрос "${searchImg}"`
+                    );
+                    this.setState({ status: 'rejected' });
+                    return;
+                }
 
-        if (firstFetch) {
-            const { searchImg, pagination } = this.state;
-            fetchFunc(searchImg, pagination)
-                .then(data => {
-                    if (data.total === 0) {
-                        this.onMessage(
-                            'failure',
-                            `Мы не смогли найти ваш запрос "${searchImg}"`
-                        );
-                        return this.setState({ status: 'rejected' });
-                    }
-
-                    this.setState({
-                        imagesArray: data.hits,
-                        status: 'resolved',
-                    });
-
+                if (pagination === 1) {
                     this.onMessage(
                         'success',
                         `По запросу "${searchImg}" мы нашли ${data.totalHits} изображений`
                     );
-                })
-                .catch(error => this.setState({ error, status: 'rejected' }));
-        }
+                }
 
-        const secondaryFetch =
-            paginationPrev !== pagination && pagination !== 1;
-
-        if (secondaryFetch) {
-            fetchFunc(searchImg, pagination)
-                .then(data =>
-                    this.setState(() => ({
-                        imagesArray: [...imagesArrayPrev, ...data.hits],
-                        status: 'resolved',
-                    }))
-                )
-                .catch(error => this.setState({ error, status: 'rejected' }));
+                this.setState(prevState => ({
+                    imagesArray: [...prevState.imagesArray, ...data.hits],
+                    status: 'resolved',
+                }));
+            } catch (error) {
+                this.setState({ error, status: 'rejected' });
+            }
         }
     }
 
@@ -70,7 +56,7 @@ class App extends React.Component {
     };
 
     resetPagination = () => {
-        this.setState({ pagination: 1 });
+        this.setState({ pagination: 1, imagesArray: [] });
     };
 
     onSearchSubmit = searchValue => {
